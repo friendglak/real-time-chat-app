@@ -31,4 +31,8 @@ export class UsersService {
   async updateRefreshToken(userId: string, refreshToken: string) {
     await this.usersRepository.update(userId, { refreshToken });
   }
+
+  async removeRefreshToken(userId: string) {
+    await this.usersRepository.update(userId, { refreshToken: '' });
+  }
 }

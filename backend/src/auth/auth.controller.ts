@@ -51,4 +51,18 @@ export class AuthController {
 
     return this.authService.refreshToken(decoded.sub, refreshToken);
   }
+
+  @Post('logout')
+  async logout(@Body() body: RefreshTokenDto) {
+    const { refreshToken } = body;
+
+    const decoded = this.authService.verifyRefreshToken(refreshToken);
+    if (!decoded) {
+      throw new UnauthorizedException('Invalid refresh token');
+    }
+
+    await this.usersService.removeRefreshToken(decoded.sub);
+
+    return { message: 'Logout successful' };
+  }
 }
