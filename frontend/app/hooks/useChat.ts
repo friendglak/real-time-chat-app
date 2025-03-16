@@ -11,27 +11,22 @@ export function useChat() {
   );
 
   useEffect(() => {
-    // Initialize socket connection
     if (!socket) {
-      socket = io("http://localhost:4000", {
-        transports: ["websocket"],
-      });
+      socket = io("http://localhost:4000", { transports: ["websocket"] });
     }
 
-    // Load messages from localStorage
-    const savedMessages = localStorage.getItem("chatMessages");
-    if (savedMessages) {
-      setMessages(JSON.parse(savedMessages));
-    }
+    // Cargar mensajes previos (si el backend los almacena)
+    fetch("http://localhost:4000/chat/messages")
+      .then((res) => res.json())
+      .then((data) => setMessages(data))
+      .catch(() =>
+        console.log("⚠️ No se pudieron cargar los mensajes previos.")
+      );
 
-    // Listen for incoming messages
+    // Escuchar nuevos mensajes en tiempo real
     socket.on("message", (data) => {
-      setMessages((prev) => {
-        const newMessages = [...prev, data];
-        // Save to localStorage
-        localStorage.setItem("chatMessages", JSON.stringify(newMessages));
-        return newMessages;
-      });
+      setMessages((prev) => [...prev, data]);
+      sessionStorage.setItem("messages", JSON.stringify([...messages, data]));
     });
 
     return () => {
@@ -40,15 +35,7 @@ export function useChat() {
   }, []);
 
   const sendMessage = (user: string, message: string) => {
-    const messageData = { user, message, timestamp: new Date().toISOString() };
-    socket.emit("sendMessage", messageData);
-
-    // Optimistically add message to state
-    setMessages((prev) => {
-      const newMessages = [...prev, messageData];
-      localStorage.setItem("chatMessages", JSON.stringify(newMessages));
-      return newMessages;
-    });
+    socket.emit("sendMessage", { user, message });
   };
 
   return { messages, sendMessage };

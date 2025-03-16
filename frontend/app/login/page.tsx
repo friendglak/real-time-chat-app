@@ -17,43 +17,29 @@ import {
 } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
+import { loginUser } from "@/lib/authService";
 
 export default function LoginPage() {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
-  const [isLoading, setIsLoading] = useState(false);
+  const [loading, setLoading] = useState(false);
   const router = useRouter();
 
-  const handleLogin = (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsLoading(true);
-
-    // Simple validation
-    if (!username || !password) {
-      toast.error("Please fill in all fields");
-      setIsLoading(false);
-      return;
-    }
-
-    // Check if user exists in localStorage
-    const users = JSON.parse(localStorage.getItem("chatUsers") || "[]");
-    const user = users.find(
-      (u: any) => u.username === username && u.password === password
-    );
-
-    if (user) {
-      // Set current user in localStorage
-      localStorage.setItem("currentUser", JSON.stringify(user));
-
+  const handleLogin = async () => {
+    setLoading(true);
+    try {
+      const data = await loginUser(username, password);
+      localStorage.setItem(
+        "currentUser",
+        JSON.stringify({ id: data.userId, username })
+      );
+      localStorage.setItem("accessToken", data.accessToken);
       toast.success("Login successful!");
-
-      // Redirect to chat
-      setTimeout(() => {
-        router.push("/chat");
-      }, 1000);
-    } else {
-      toast.error("Invalid username or password");
-      setIsLoading(false);
+      router.push("/chat");
+    } catch (error) {
+      toast.error("Invalid credentials");
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -90,8 +76,8 @@ export default function LoginPage() {
                 onChange={(e) => setPassword(e.target.value)}
               />
             </div>
-            <Button type="submit" className="w-full" disabled={isLoading}>
-              {isLoading ? "Logging in..." : "Login"}
+            <Button type="submit" className="w-full" disabled={loading}>
+              {loading ? "Logging in..." : "Login"}
             </Button>
           </form>
         </CardContent>

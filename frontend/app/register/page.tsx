@@ -17,6 +17,7 @@ import {
 } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
+import { registerUser } from "@/lib/authService";
 
 export default function RegisterPage() {
   const [username, setUsername] = useState("");
@@ -25,42 +26,18 @@ export default function RegisterPage() {
   const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
 
-  const handleRegister = (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleRegister = async () => {
     setIsLoading(true);
-
-    // Simple validation
-    if (!username || !password || !confirmPassword) {
-      toast.error("Please fill in all fields");
-      setIsLoading(false);
-      return;
-    }
-
-    if (password !== confirmPassword) {
-      toast.error("Passwords do not match");
-      setIsLoading(false);
-      return;
-    }
-
-    // Check if username already exists
-    const users = JSON.parse(localStorage.getItem("chatUsers") || "[]");
-    if (users.some((user: any) => user.username === username)) {
-      toast.error("Username already exists");
-      setIsLoading(false);
-      return;
-    }
-
-    // Add new user
-    const newUser = { id: Date.now(), username, password };
-    users.push(newUser);
-    localStorage.setItem("chatUsers", JSON.stringify(users));
-
-    toast.success("Registration successful! You can now login.");
-
-    // Redirect to login
-    setTimeout(() => {
+    try {
+      await registerUser(username, password);
+      toast.success("Registration successful!");
       router.push("/login");
-    }, 1500);
+    } catch (error) {
+      console.log(error, "ERROR");
+      toast.error("Error registering user");
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (

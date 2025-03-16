@@ -28,15 +28,24 @@ export default function ChatPage() {
   const router = useRouter();
 
   useEffect(() => {
-    // Check if user is logged in
-    const userStr = localStorage.getItem("currentUser");
-    if (!userStr) {
+    const token = localStorage.getItem("accessToken");
+    if (!token) {
       router.push("/login");
       return;
     }
 
-    const user = JSON.parse(userStr);
-    setCurrentUser(user);
+    fetch("http://localhost:4000/auth/me", {
+      headers: { Authorization: `Bearer ${token}` },
+    })
+      .then((res) => res.json())
+      .then((data) => {
+        if (!data.username) {
+          router.push("/login");
+        } else {
+          setCurrentUser(data);
+        }
+      })
+      .catch(() => router.push("/login"));
   }, [router]);
 
   const handleSendMessage = () => {
@@ -48,22 +57,19 @@ export default function ChatPage() {
 
   const handleLogout = () => {
     localStorage.removeItem("currentUser");
+    localStorage.removeItem("accessToken");
     toast.success("Logged out successfully");
     router.push("/login");
   };
 
-  const getInitials = (name: string) => {
-    return name.substring(0, 2).toUpperCase();
-  };
+  const getInitials = (name: string) => name.substring(0, 2).toUpperCase();
 
   const getRandomColor = (username: string) => {
-    // Generate a consistent color based on username
     let hash = 0;
     for (let i = 0; i < username.length; i++) {
       hash = username.charCodeAt(i) + ((hash << 5) - hash);
     }
-    const hue = hash % 360;
-    return `hsl(${hue}, 70%, 60%)`;
+    return `hsl(${hash % 360}, 70%, 60%)`;
   };
 
   if (!currentUser) {
